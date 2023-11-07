@@ -141,3 +141,21 @@ button {
     margin: 10px 0;
     padding: 10px;
 }
+
+#workflow-list li.selected {
+    background-color: #007bff;
+    color: #fff;
+    cursor: pointer;
+}
+
+#workflow-list li {
+    list-style-type: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+#workflow-list li:hover {
+    background: rgba(0, 123, 255, 0.2);
+    color: #007bff;
+    cursor: pointer;
+}
