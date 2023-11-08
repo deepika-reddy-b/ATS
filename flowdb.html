@@ -1,376 +1,415 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.5/joint.css" />
-  <link rel="stylesheet" href="stylesheet.css" /> 
-  <title>workflow db</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.5/joint.css" />
+    <link rel="stylesheet" href="stylesheet.css" />
+    <title>workflow db</title>
 </head>
+
 <body>
-  <div class="navbar">
-    <div class="logo"><img style="width: 15%;" src="#" alt=""></div>
-    <div class="nav-items">
-        <a href="#">Home</a>
-        <a href="#">Workflows</a>
-        <a href="#">Templates</a>
-        <a href="#">Settings</a>
-    </div>
-  </div>
-
-  <div class="workflow-container">
-    <div class="leftside">
-        <div class="upperleft">
-            <h4>Your Workflows</h4>
-            <input type="text" placeholder="Workflow name" value="" id="WFname" required />
-            <button onclick="createWorkflow()">Create new Workflow</button>
-            <ul id="workflow-list"></ul>
-        </div>
-        <div class="lowerleft">
-            <h4>Add blocks into Workflow</h4>
-            <input type="text" placeholder="block name" id="name" />
-            <button onclick="addBlock()">Add</button>
+    <div class="navbar">
+        <div class="logo"><img style="width: 15%;" src="#" alt=""></div>
+        <div class="nav-items">
+            <a href="#">Home</a>
+            <a href="#">Workflows</a>
+            <a href="#">Templates</a>
+            <a href="#">Settings</a>
         </div>
     </div>
-    <div class="middle">
-        <div id="myholder"></div>
-        <div class="canvas-buttons">
-            <p id="p"></p>
-          <button id="saveButton">Save</button>
-          <button>Edit</button>
-          <button>Clear</button>
+
+    <div class="workflow-container">
+        <div class="leftside">
+            <div class="upperleft">
+                <h4>Your Workflows</h4>
+                <input type="text" placeholder="Workflow name" value="" id="WFname" required />
+                <button onclick="createWorkflow()">Create new Workflow</button>
+                <ul id="workflow-list"></ul>
+            </div>
+            <div class="lowerleft">
+                <h4>Add blocks into Workflow</h4>
+                <input type="text" placeholder="block name" id="name" />
+                <button onclick="addBlock()">Add</button>
+            </div>
+        </div>
+        <div class="middle">
+            <div id="myholder"></div>
+            <h2> Current Workflow : </h2> <span id="cwf_name"> </span>
+            <div class="canvas-buttons">
+                <p id="p"></p>
+                <button id="saveButton">Save</button>
+                <button>Edit</button>
+                <button>Clear</button>
+            </div>
+        </div>
+        <div class="properties-panel">
+            <h4>Properties Panel</h4>
+            <label>Step Name:</label>
+            <input type="text" id="stepNameInput">
+            <label>Step Description:</label>
+            <textarea id="stepDescriptionInput"></textarea>
+            <label>Step Configuration:</label>
+            <textarea id="stepConfigInput"></textarea>
+            <button onclick="updateBlock()">Update Block</button>
+            <button onclick="deleteBlock()">Delete Block</button>
         </div>
     </div>
-    <div class="properties-panel">
-        <h4>Properties Panel</h4>
-        <label>Step Name:</label>
-        <input type="text" id="stepNameInput">
-        <label>Step Description:</label>
-        <textarea id="stepDescriptionInput"></textarea>
-        <label>Step Configuration:</label>
-        <textarea id="stepConfigInput"></textarea>
-        <button onclick="updateBlock()">Update Block</button>
-        <button onclick="deleteBlock()">Delete Block</button>
-    </div>
-  </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.1/backbone.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.5/joint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.1/backbone.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.5/joint.js"></script>
 
-  <script>
-    var namespace = joint.shapes;
-    var graph =  new joint.dia.Graph({}, { cellNamespace: namespace });;
-    var paper = new joint.dia.Paper({
-          el: document.getElementById('myholder'),
-          model: graph,
-          width: 600,
-          height: 600,
-          gridSize: 10,
-          drawGrid: true,
-          background: {
-            color: 'lightblue'
-          },
-          cellViewNamespace: namespace
+    <script>
+        var namespace = joint.shapes;
+        var graph = new joint.dia.Graph({}, { cellNamespace: namespace });;
+        var paper = new joint.dia.Paper({
+            el: document.getElementById('myholder'),
+            model: graph,
+            width: 600,
+            height: 600,
+            gridSize: 10,
+            drawGrid: true,
+            background: {
+                color: 'lightblue'
+            },
+            cellViewNamespace: namespace
         });
-    var selectedWorkflow = null;
+        eventsaddd();
+        var selectedWorkflow = null;
+        var selectedElement = null; // Declare selectedElement as a global variable
+        function eventsaddd(){
+            paper.on('element:pointerdblclick', function (elementView, evt) {
+                    console.log('Double-click event triggered');
+                    selectedElement = elementView.model;
+                    selectedElement.attr('body/stroke', 'pink'); 
+                    document.getElementById('stepNameInput').value = selectedElement.attr('label/text');
+                    document.getElementById('stepDescriptionInput').value = selectedElement.get('stepDescription');
+                    document.getElementById('stepConfigInput').value = selectedElement.get('stepConfig');
+                });
 
-    function createWorkflow() {
-        var workflowName = document.getElementById("WFname").value;
-        if (workflowName) {
-        // Create a new workflow element and add it to the list
-        var listItem = document.createElement("li");
-        listItem.textContent = workflowName;
-        listItem.onclick = function () {
-          displayWorkflow(workflowName);
-        };
-        document.getElementById("workflow-list").appendChild(listItem);
+                paper.on('blank:pointerdown', function (evt, x, y) {
+                    var linkView = this.getDefaultLink()
+                        .set({
+                            'source': { x: x, y: y },
+                            'target': { x: x, y: y }
+                        })
+                        .addTo(this.model)
+                        .findView(this);
 
-        // Create the workflow graph
-        graph = new joint.dia.Graph({}, { cellNamespace: namespace });
-        paper = new joint.dia.Paper({
-          el: document.getElementById('myholder'),
-          model: graph,
-          width: 600,
-          height: 600,
-          gridSize: 10,
-          drawGrid: true,
-          background: {
-            color: 'lightblue'
-          },
-          cellViewNamespace: namespace
-        });
+                    linkView.startArrowheadMove('target');
 
-        let selectedElement;
-        paper.on('element:pointerdblclick', function (elementView, evt) {
-        selectedElement = elementView.model;
-        document.getElementById('stepNameInput').value = selectedElement.attr('label/text');
-        document.getElementById('stepDescriptionInput').value = selectedElement.get('stepDescription');
-        document.getElementById('stepConfigInput').value = selectedElement.get('stepConfig');
-        });
+                    $(document).on({
+                        'mousemove.example': onDrag,
+                        'mouseup.example': onDragEnd
+                    }, {
+                        view: linkView,
+                        paper: this
+                    });
 
-        paper.on('blank:pointerdown', function (evt, x, y) {
-        var linkView = this.getDefaultLink()
-            .set({
-            'source': { x: x, y: y },
-            'target': { x: x, y: y }
-            })
-            .addTo(this.model)
-            .findView(this);
+                    function onDrag(evt) {
+                        var p = evt.data.paper.snapToGrid({
+                            x: evt.clientX,
+                            y: evt.clientY
+                        });
 
-        linkView.startArrowheadMove('target');
+                        evt.data.view.pointermove(evt, p.x, p.y);
+                    }
 
-        $(document).on({
-            'mousemove.example': onDrag,
-            'mouseup.example': onDragEnd
-        }, {
-            view: linkView,
-            paper: this
-        });
-
-        function onDrag(evt) {
-            var p = evt.data.paper.snapToGrid({
-            x: evt.clientX,
-            y: evt.clientY
-            });
-
-            evt.data.view.pointermove(evt, p.x, p.y);
+                    function onDragEnd(evt) {
+                        evt.data.view.pointerup(evt);
+                        $(document).off('.example');
+                    }
+                });
         }
 
-        function onDragEnd(evt) {
-            evt.data.view.pointerup(evt);
-            $(document).off('.example');
-        }
-        });
-        }
-       
-            
-    }
+        
 
-    function displayWorkflow(workflowName) {
-        selectedWorkflow = workflowName;
-        if (window.workflow===workflowName) {
-            console.log(`Workflow Name: ${workflow.name}`);
-            console.log(`Flow Data: ${workflow.flow}`);
-            console.log(`jscon load karna hai`);
-            graph.fromJSON(JSON.parse(workflow.flow));
-        } else {
-            // If the workflow data is not available, fetch it
-            getWorkflowData(selectedWorkflow).then(() => {
-            if (window.workflow) {
+
+        function createWorkflow() {
+            var workflowName = document.getElementById("WFname").value;
+            if (workflowName) {
+                // Update the current workflow name on the canvas
+                document.getElementById("cwf_name").textContent = workflowName;
+
+                // Create a new workflow element and add it to the list
+                var listItem = document.createElement("li");
+                listItem.textContent = workflowName;
+                listItem.onclick = function () {
+                    displayWorkflow(workflowName);
+                };
+                document.getElementById("workflow-list").appendChild(listItem);
+                
+                // Create the workflow graph
+                graph = new joint.dia.Graph({}, { cellNamespace: namespace });
+                paper = new joint.dia.Paper({
+                    el: document.getElementById('myholder'),
+                    model: graph,
+                    width: 600,
+                    height: 600,
+                    gridSize: 10,
+                    drawGrid: true,
+                    background: {
+                        color: 'lightblue'
+                    },
+                    cellViewNamespace: namespace
+                });
+                eventsaddd();
+            }
+
+
+        }
+
+        function displayWorkflow(workflowName) {
+            selectedWorkflow = workflowName;
+            if (workflow === workflowName) {
                 console.log(`Workflow Name: ${workflow.name}`);
                 console.log(`Flow Data: ${workflow.flow}`);
                 console.log(`jscon load karna hai`);
                 graph.fromJSON(JSON.parse(workflow.flow));
+                // Update the current workflow name on the canvas
+                document.getElementById("cwf_name").textContent = workflow.name;
             } else {
-                console.log("Workflow data not found.");
+                // If the workflow data is not available, fetch it
+                getWorkflowData(selectedWorkflow).then(() => {
+                    if (window.workflow) {
+                        console.log(`Workflow Name: ${workflow.name}`);
+                        console.log(`Flow Data: ${workflow.flow}`);
+                        console.log(`jscon load karna hai`);
+                        graph.fromJSON(JSON.parse(workflow.flow));
+                        // Update the current workflow name on the canvas
+                        document.getElementById("cwf_name").textContent = workflow.name;
+                    } else {
+                        console.log("Workflow data not found.");
+                    }
+                });
             }
-            });
         }
-    }
 
-    function addBlock() {
-      nameit = document.getElementById("name").value;
-      var rect = new joint.shapes.standard.Rectangle();
-      rect.position(0, 0);
-      rect.resize(100, 40);
-      rect.attr({
-        body: {
-          fill: 'blue'
-        },
-        label: {
-          text: nameit,
-          fill: 'white'
-        }
-      });
-      rect.addTo(graph);
-    }
 
-    function updateBlock() {
-        if (selectedElement) {
-        selectedElement.attr('label/text', document.getElementById('stepNameInput').value);
-        selectedElement.set('stepDescription', document.getElementById('stepDescriptionInput').value);
-        selectedElement.set('stepConfig', document.getElementById('stepConfigInput').value);
-      }
-    }
+        function addBlock() {
 
-    function deleteBlock() {
-        if (selectedElement) {
-        selectedElement.remove();
-        selectedElement = null;
-      }
-    }
-   
-    document.getElementById('saveButton').addEventListener('click', function () {
-        if (selectedWorkflow) {
-            sendMessage(selectedWorkflow);
-        } else {
-            console.log('Selected Workflow is not defined non modules');
-        }
-    });
-    // const workflowListItems = document.querySelectorAll("#workflow-list li");
-    // document.getElementById('saveButton').addEventListener('click', function () {
-    //     if (selectedWorkflow) {
-    //         getWorkflowData(selectedWorkflow);
-    //     } else {
-    //         console.log('Selected Workflow is not defined non modules');
-    //     }
-    // });
-
-  </script>
-
-<script type="module" >
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
-
-    const firebaseConfig = {
-    apiKey: "AIzaSyDu-K07p4wqK4-UoLfwtGJTcBablsvRTeQ",
-    authDomain: "ats-workflow.firebaseapp.com",
-    projectId: "ats-workflow",
-    storageBucket: "ats-workflow.appspot.com",
-    messagingSenderId: "315012060088",
-    appId: "1:315012060088:web:f226cd19a806d16609f54d",
-    measurementId: "G-N4EB2450QL"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase();
-
-    
-    export async function getWorkflowData(workName) {
         
-    const workflowRef = ref(database, 'workflows/');
-        
-    try {
-        const snapshot = await get(workflowRef);
-        
-        if (snapshot.exists()) {
-        const workflowData = snapshot.val();
-        for (var workflowName in workflowData) {
-            if (workflowData.hasOwnProperty(workflowName)) {
-                const workflow = workflowData[workflowName];
-                if(workName==workflow.name){
-                    const workflow = workflowData[workflowName];
-                    console.log("here.........."+workflow.name)
-                    window.workflow= workflow; 
+            nameit = document.getElementById("name").value;
+            var rect = new joint.shapes.standard.Rectangle();
+            rect.position(0, 0);
+            rect.resize(150, 60);
+            rect.attr({
+                body: {
+                    fill: 'green'
+                },
+                label: {
+                    text: nameit,
+                    fill: 'white'
                 }
-                // else console.log(workName+" not found.................................")
-            }
-        }
-        } else {
-        console.error("Workflow data not found");
-        return null;
-        }
-    } catch (error) {
-        console.error("Error getting data:", error);
-        return null;
-    }
-    
-    }
-
-    // let workflowRef;
-
-    // export function initializeFirebase() {
-    // database = getDatabase();
-    // }
-
-    // export function setWorkflowRef(workflowName) {
-    // workflowRef = ref(database, workflowName);
-    // }
-
-    
-    function sendMessage(workflowName) {
-        if (workflowName) {
-            
-            const database = getDatabase();
-            const files = JSON.stringify(graph);
-            console.log('Selected Workflow:', workflowName);
-            
-            const workflowRef = ref(database, 'workflows/' + workflowName);
-
-            set(workflowRef, {
-                name: workflowName,
-                flow: files
-            })
-            .then(() => {
-                alert('Data saved successfully');
-            })
-            .catch((error) => {
-                alert('Error: ' + error);
             });
-        } else {
-            console.log('Selected Workflow is not defined send message');
+            rect.addTo(graph);
         }
-    }
-    // function addClickListenersToWorkflowItems() {
-    //     const workflowListItems = document.querySelectorAll("#workflow-list li");
-    //     if (workflowListItems.length === 0) {
-            
-    //         document.getElementById('myholder').innerHTML = '<p>No workflows available.</p>';
-    //         return;
-    //     }
-        
-    //     workflowListItems.forEach((item) => {
-    //         item.addEventListener('click', function () {
-                
-    //             workflowListItems.forEach((item) => {
-    //                 item.classList.remove("selected");
-    //             });
 
-                
-    //             const workflowName = item.textContent;
-    //             displayWorkflow(workflowName);
-                
-    //             item.classList.add("selected");
-                
-    //             selectedWorkflow = workflowName;
-                
-    //         });
-    //     });
-        
-    // }
-    export async function loadthelist(){
-        
-        const workflowRef = ref(database, 'workflows/');
-            
-        try {
-            const snapshot = await get(workflowRef);
-            if (snapshot.exists()) {
-            const workflowData = snapshot.val();
-            for (var workflowName in workflowData) {
-                if (workflowData.hasOwnProperty(workflowName)) {
-                    const workflow = workflowData[workflowName];
-                    const name = workflow.name;
-                    const flow = workflow.flow;
-                    var listItem = document.createElement("li");
-                    listItem.textContent = workflowName;
-                    listItem.onclick = function () {
-                        
-                        displayWorkflow(name);
-                    };
-                    document.getElementById("workflow-list").appendChild(listItem);
 
-                }
-            }
+        function updateBlock() {
+            if (selectedElement) {
+                // Unhighlight the previously selected block
+                selectedElement.attr('body/stroke', 'blue'); // Change the border color back to blue
+
+                console.log("Updating block properties...");
+
+                // Highlight the selected block
+                selectedElement.attr('body/stroke', 'white'); // Change the border color to red
+
+                // Enable editing by removing the 'disabled' attribute
+                document.getElementById('stepNameInput').removeAttribute('disabled');
+                document.getElementById('stepDescriptionInput').removeAttribute('disabled');
+                document.getElementById('stepConfigInput').removeAttribute('disabled');
+
+                // Update the selected element's properties
+                selectedElement.attr('label/text', document.getElementById('stepNameInput').value);
+                selectedElement.set('stepDescription', document.getElementById('stepDescriptionInput').value);
+                selectedElement.set('stepConfig', document.getElementById('stepConfigInput').value);
+                console.log("Block properties updated.");
             } else {
-            console.error("Workflow data not found");
-            return null;
+                console.log("No block selected for updating.");
             }
-        } catch (error) {
-            console.error("Error getting data:", error);
-            return null;
         }
-    }
-    document.addEventListener("DOMContentLoaded", function () {
-        // addClickListenersToWorkflowItems();
-        loadthelist();
-        
-    });
-    window.getWorkflowData = getWorkflowData;
-    window.sendMessage = sendMessage;
-    
-</script>
+        function deleteBlock() {
+            if (selectedElement) {
+                selectedElement.remove();
+                selectedElement = null;
+            }
+        }
+
+        document.getElementById('saveButton').addEventListener('click', function () {
+            if (selectedWorkflow) {
+                sendMessage(selectedWorkflow);
+            } else {
+                console.log('Selected Workflow is not defined non modules');
+            }
+        });
+        // const workflowListItems = document.querySelectorAll("#workflow-list li");
+        // document.getElementById('saveButton').addEventListener('click', function () {
+        //     if (selectedWorkflow) {
+        //         getWorkflowData(selectedWorkflow);
+        //     } else {
+        //         console.log('Selected Workflow is not defined non modules');
+        //     }
+        // });
+
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDu-K07p4wqK4-UoLfwtGJTcBablsvRTeQ",
+            authDomain: "ats-workflow.firebaseapp.com",
+            projectId: "ats-workflow",
+            storageBucket: "ats-workflow.appspot.com",
+            messagingSenderId: "315012060088",
+            appId: "1:315012060088:web:f226cd19a806d16609f54d",
+            measurementId: "G-N4EB2450QL"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase();
+
+
+        export async function getWorkflowData(workName) {
+
+            const workflowRef = ref(database, 'workflows/');
+
+            try {
+                const snapshot = await get(workflowRef);
+
+                if (snapshot.exists()) {
+                    const workflowData = snapshot.val();
+                    for (var workflowName in workflowData) {
+                        if (workflowData.hasOwnProperty(workflowName)) {
+                            const workflow = workflowData[workflowName];
+                            if (workName == workflow.name) {
+                                const workflow = workflowData[workflowName];
+                                console.log("here.........." + workflow.name)
+                                window.workflow = workflow;
+                            }
+                            // else console.log(workName+" not found.................................")
+                        }
+                    }
+                } else {
+                    console.error("Workflow data not found");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error getting data:", error);
+                return null;
+            }
+
+        }
+
+        // let workflowRef;
+
+        // export function initializeFirebase() {
+        // database = getDatabase();
+        // }
+
+        // export function setWorkflowRef(workflowName) {
+        // workflowRef = ref(database, workflowName);
+        // }
+
+
+        function sendMessage(workflowName) {
+            if (workflowName) {
+
+                const database = getDatabase();
+                const files = JSON.stringify(graph);
+                console.log('Selected Workflow:', workflowName);
+
+                const workflowRef = ref(database, 'workflows/' + workflowName);
+
+                set(workflowRef, {
+                    name: workflowName,
+                    flow: files
+                })
+                    .then(() => {
+                        alert('Data saved successfully');
+                    })
+                    .catch((error) => {
+                        alert('Error: ' + error);
+                    });
+            } else {
+                console.log('Selected Workflow is not defined send message');
+            }
+        }
+        // function addClickListenersToWorkflowItems() {
+        //     const workflowListItems = document.querySelectorAll("#workflow-list li");
+        //     if (workflowListItems.length === 0) {
+
+        //         document.getElementById('myholder').innerHTML = '<p>No workflows available.</p>';
+        //         return;
+        //     }
+
+        //     workflowListItems.forEach((item) => {
+        //         item.addEventListener('click', function () {
+
+        //             workflowListItems.forEach((item) => {
+        //                 item.classList.remove("selected");
+        //             });
+
+
+        //             const workflowName = item.textContent;
+        //             displayWorkflow(workflowName);
+
+        //             item.classList.add("selected");
+
+        //             selectedWorkflow = workflowName;
+
+        //         });
+        //     });
+
+        // }
+        export async function loadthelist() {
+
+            const workflowRef = ref(database, 'workflows/');
+
+            try {
+                const snapshot = await get(workflowRef);
+                if (snapshot.exists()) {
+                    const workflowData = snapshot.val();
+                    for (var workflowName in workflowData) {
+                        if (workflowData.hasOwnProperty(workflowName)) {
+                            const workflow = workflowData[workflowName];
+                            const name = workflow.name;
+                            const flow = workflow.flow;
+                            var listItem = document.createElement("li");
+                            listItem.textContent = workflowName;
+                            listItem.onclick = function () {
+
+                                displayWorkflow(name);
+                            };
+                            document.getElementById("workflow-list").appendChild(listItem);
+
+                        }
+                    }
+                } else {
+                    console.error("Workflow data not found");
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error getting data:", error);
+                return null;
+            }
+        }
+        document.addEventListener("DOMContentLoaded", function () {
+            // addClickListenersToWorkflowItems();
+            loadthelist();
+
+        });
+        window.getWorkflowData = getWorkflowData;
+        window.sendMessage = sendMessage;
+
+    </script>
 </body>
-</html> 
+
+</html>
