@@ -62,8 +62,19 @@
 
   <script>
     var namespace = joint.shapes;
-    var graph = null;
-    var paper = null;
+    var graph =  new joint.dia.Graph({}, { cellNamespace: namespace });;
+    var paper = new joint.dia.Paper({
+          el: document.getElementById('myholder'),
+          model: graph,
+          width: 600,
+          height: 600,
+          gridSize: 10,
+          drawGrid: true,
+          background: {
+            color: 'lightblue'
+          },
+          cellViewNamespace: namespace
+        });
     var selectedWorkflow = null;
 
     function createWorkflow() {
@@ -139,17 +150,25 @@
     }
 
     function displayWorkflow(workflowName) {
-      selectedWorkflow = workflowName;
-      var workflow=getWorkflowData(selectedWorkflow);
-      console.log("display no workflow came"+workflow);
-      if(workflow.flow===null){
-        console.log("starting ");
-      }else {
-        console.log(`Workflow Name: ${workflow.name}`);
-        console.log(`Flow Data: ${workflow.flow}`);
-        graph.fromJSON(JSON.parse(workflow.flow));
-      }
-      
+        selectedWorkflow = workflowName;
+        if (window.workflow===workflowName) {
+            console.log(`Workflow Name: ${workflow.name}`);
+            console.log(`Flow Data: ${workflow.flow}`);
+            console.log(`jscon load karna hai`);
+            graph.fromJSON(JSON.parse(workflow.flow));
+        } else {
+            // If the workflow data is not available, fetch it
+            getWorkflowData(selectedWorkflow).then(() => {
+            if (window.workflow) {
+                console.log(`Workflow Name: ${workflow.name}`);
+                console.log(`Flow Data: ${workflow.flow}`);
+                console.log(`jscon load karna hai`);
+                graph.fromJSON(JSON.parse(workflow.flow));
+            } else {
+                console.log("Workflow data not found.");
+            }
+            });
+        }
     }
 
     function addBlock() {
@@ -221,12 +240,12 @@
 
     
     export async function getWorkflowData(workName) {
-        console.log("inside get");
+        
     const workflowRef = ref(database, 'workflows/');
         
     try {
         const snapshot = await get(workflowRef);
-        console.log(snapshot.val());
+        
         if (snapshot.exists()) {
         const workflowData = snapshot.val();
         for (var workflowName in workflowData) {
@@ -235,7 +254,7 @@
                 if(workName==workflow.name){
                     const workflow = workflowData[workflowName];
                     console.log("here.........."+workflow.name)
-                    return workflow; 
+                    window.workflow= workflow; 
                 }
                 // else console.log(workName+" not found.................................")
             }
@@ -248,17 +267,18 @@
         console.error("Error getting data:", error);
         return null;
     }
+    
     }
 
-    let workflowRef;
+    // let workflowRef;
 
-    export function initializeFirebase() {
-    database = getDatabase();
-    }
+    // export function initializeFirebase() {
+    // database = getDatabase();
+    // }
 
-    export function setWorkflowRef(workflowName) {
-    workflowRef = ref(database, workflowName);
-    }
+    // export function setWorkflowRef(workflowName) {
+    // workflowRef = ref(database, workflowName);
+    // }
 
     
     function sendMessage(workflowName) {
@@ -312,7 +332,7 @@
         
     // }
     export async function loadthelist(){
-        console.log("inside load");
+        
         const workflowRef = ref(database, 'workflows/');
             
         try {
@@ -350,6 +370,7 @@
     });
     window.getWorkflowData = getWorkflowData;
     window.sendMessage = sendMessage;
+    
 </script>
 </body>
 </html> 
