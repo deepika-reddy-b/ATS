@@ -61,7 +61,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.4.1/backbone.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.5/joint.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jointjs/3.7.7/joint.js"></script>
 
     <script>
         var namespace = joint.shapes;
@@ -81,17 +81,38 @@
         eventsaddd();
         var selectedWorkflow = null;
         var selectedElement = null; // Declare selectedElement as a global variable
+
+        function addlink(s, d) {
+            var link = new joint.shapes.standard.Link();
+            link.source(s);
+            link.target(d);
+            link.connector('jumpover');
+        }
+
         function eventsaddd() {
-            paper.on('element:pointerdblclick', function (elementView, evt) {
-                // console.log('Double-click event triggered');
+            paper.on('element:contextmenu', function (elementView, evt) {
                 selectedElement = elementView.model;
-                selectedElement.attr('body/stroke', 'pink');
+
+                if (selectedElement.attr('root\title') === 'r') {
+                    selectedElement.attr('body/stroke', 'white');
+                    selectedElement.attr('header/stroke', 'white');
+                    document.getElementById('stepNameInput').value = selectedElement.attr('headerText/text');
+                    document.getElementById('stepDescriptionInput').value = selectedElement.get('stepDescription');
+                    document.getElementById('stepConfigInput').value = selectedElement.get('stepConfig');
+
+                } else {
+                    selectedElement.attr('body/stroke', 'white');
+                    document.getElementById('stepNameInput').value = selectedElement.attr('label/text');
+                    document.getElementById('stepDescriptionInput').value = selectedElement.get('stepDescription');
+                    document.getElementById('stepConfigInput').value = selectedElement.get('stepConfig');
+                }
                 document.getElementById('stepNameInput').value = selectedElement.attr('label/text');
                 document.getElementById('stepDescriptionInput').value = selectedElement.get('stepDescription');
                 document.getElementById('stepConfigInput').value = selectedElement.get('stepConfig');
             });
 
-            paper.on('blank:pointerdown', function (evt, x, y) {
+            paper.on('element:pointerdblclick', function (evt, x, y) {
+                console.log("called")
                 var linkView = this.getDefaultLink()
                     .set({
                         'source': { x: x, y: y },
@@ -100,9 +121,10 @@
                     })
                     .addTo(this.model)
                     .findView(this);
+                // var linkView = addlink(s,d);
 
                 linkView.startArrowheadMove('target');
-                    
+
                 $(document).on({
                     'mousemove.example': onDrag,
                     'mouseup.example': onDragEnd
@@ -118,22 +140,21 @@
                     });
 
                     evt.data.view.pointermove(evt, p.x, p.y);
+
                 }
 
                 function onDragEnd(evt) {
                     evt.data.view.pointerup(evt);
                     $(document).off('.example');
+                    console.log("called")
                 }
             });
+
         }
 
         function createWorkflow() {
             var workflowName = document.getElementById("WFname").value;
             if (workflowName) {
-                // Update the current workflow name on the canvas
-                // document.getElementById("cwf_name").textContent = workflowName;
-
-                // Create a new workflow element and add it to the list
                 var listItem = document.createElement("li");
                 listItem.textContent = workflowName;
                 listItem.onclick = function () {
@@ -141,7 +162,6 @@
                 };
                 document.getElementById("workflow-list").appendChild(listItem);
 
-                // Create the workflow graph
                 graph = new joint.dia.Graph({}, { cellNamespace: namespace });
                 paper = new joint.dia.Paper({
                     el: document.getElementById('myholder'),
@@ -194,7 +214,7 @@
                 headeredRectangle.attr({
                     root: {
                         tabindex: 12,
-                        title: name
+                        title: nameit
                     },
                     header: {
                         fill: 'red',
@@ -208,7 +228,7 @@
                         fillOpacity: 0.5,
                     },
                     bodyText: {
-                        text: des,
+                        text: des + "\n" + conf,
                     }
                 });
                 headeredRectangle.addTo(graph);
@@ -217,6 +237,9 @@
                 rect.position(0, 0);
                 rect.resize(150, 60);
                 rect.attr({
+                    root: {
+                        title: name,
+                    },
                     body: {
                         fill: 'green'
                     },
@@ -225,23 +248,62 @@
                         fill: 'white'
                     }
                 });
+
+
+                // Make the rectangle draggable
+                rect.set('draggable', true);
+
+                // Add event handlers to create links
+                rect.attr('root/title', 'Drag me!');  // Add a title attribute to indicate that it's draggable
+
+                // Add event handlers to create links
+                rect.on('pointerdown', function (evt, x, y) {
+                    var link = new joint.shapes.standard.Link();
+                    link.source({ id: rect.id });  // Set the source of the link to this rectangle
+                    link.addTo(graph);
+
+                    // Define the target as an arbitrary point
+                    link.target({ x: x, y: y });
+
+                    // Add the link to the graph
+                    link.addTo(graph);
+
+                    // Prevent paper from handling pointerdown
+                    evt.stopPropagation();
+                });
                 rect.addTo(graph);
             }
         }
 
         function updateBlock() {
             if (selectedElement) {
-                selectedElement.attr('body/stroke', 'blue');
-                selectedElement.attr('body/stroke', 'white');
-                document.getElementById('stepNameInput').removeAttribute('disabled');
-                document.getElementById('stepDescriptionInput').removeAttribute('disabled');
-                document.getElementById('stepConfigInput').removeAttribute('disabled');
 
-                // Update the selected element's properties
-                selectedElement.attr('label/text', document.getElementById('stepNameInput').value);
-                selectedElement.set('stepDescription', document.getElementById('stepDescriptionInput').value);
-                selectedElement.set('stepConfig', document.getElementById('stepConfigInput').value);
-                console.log("Block properties updated.");
+                if (selectedElement.attr('root\title') === 'r') {
+                    selectedElement.attr('body/stroke', 'white');
+                    selectedElement.attr('header/stroke', 'white');
+                    document.getElementById('stepNameInput').removeAttribute('disabled');
+                    document.getElementById('stepDescriptionInput').removeAttribute('disabled');
+                    document.getElementById('stepConfigInput').removeAttribute('disabled');
+
+                    // Update the selected element's properties
+                    selectedElement.attr('headerText/text', document.getElementById('stepNameInput').value);
+                    var value = getElementById('stepDescriptionInput').value + '\n' + document.getElementById('stepConfigInput').value;
+                    selectedElement.attr('bodyText/text', value);
+                    console.log("Block properties updated.");
+
+                } else {
+                    selectedElement.attr('body/stroke', 'white');
+                    document.getElementById('stepNameInput').removeAttribute('disabled');
+                    document.getElementById('stepDescriptionInput').removeAttribute('disabled');
+                    document.getElementById('stepConfigInput').removeAttribute('disabled');
+
+                    // Update the selected element's properties
+                    selectedElement.attr('label/text', document.getElementById('stepNameInput').value);
+                    selectedElement.set('stepDescription', document.getElementById('stepDescriptionInput').value);
+                    selectedElement.set('stepConfig', document.getElementById('stepConfigInput').value);
+                    console.log("Block properties updated.");
+                }
+
             } else {
                 console.log("No block selected for updating.");
             }
