@@ -103,7 +103,16 @@
       });
 
       paper.on('blank:pointerdown', function (evt, x, y) {
-        var linkView = addlink();
+        var linkView = this.getDefaultLink()
+          .set({
+            'source': { x: x, y: y },
+            'target': { x: x, y: y },
+            'line/stroke': '#fe854f'
+          })
+          .addTo(this.model)
+          .findView(this);
+
+
 
         linkView.startArrowheadMove('target');
 
