@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "firebase": "^10.5.2"
+    "firebase": "^10.5.2",
+    "reactflow": "^11.9.4"
   }
 }
